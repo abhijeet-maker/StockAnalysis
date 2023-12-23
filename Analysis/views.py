@@ -566,6 +566,7 @@ class MACrossMulti(APIView):
             for stock in stock_list:
                 try:
                     stock_data = get_stock_data(stock, start_date, end_date)
+                    stock_data.dropna()
                     stock_info = get_stock_info(stock)
                     r_data = {}
                     if stock_info:
@@ -576,6 +577,7 @@ class MACrossMulti(APIView):
                     r_data.setdefault("currentPrice", stock_info.info.get("currentPrice"))
                     self._trade_data.setdefault(stock, {}).update(r_data)
                     rsi = calculate_rsi(stock_data, period=14)
+                    rsi.dropna()
                     short_rolling = stock_data.rolling(window=short_window).mean()
                     long_rolling = stock_data.rolling(window=long_window).mean()
 
