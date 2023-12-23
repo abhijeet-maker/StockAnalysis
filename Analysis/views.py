@@ -556,7 +556,7 @@ class MACrossMulti(APIView):
         while self._trade_data is None:
             time.sleep(1)
         response = {"code": 200, "status": "success", "data": self._trade_data}
-        print(response)
+        #print(response)
         return Response(response)
 
     def plot_moving_average_crossover(self, short_window, long_window, start_date, end_date, detail):
