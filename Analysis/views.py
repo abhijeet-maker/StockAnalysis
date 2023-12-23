@@ -478,6 +478,7 @@ class MACross(APIView):
             # get_stock_symbol()
             try:
                 stock_data = get_stock_data(symbol, start_date, end_date)
+                stock_data.dropna()
                 stock_info = get_stock_info(symbol)
                 r_data = {}
                 if stock_info:
@@ -493,6 +494,7 @@ class MACross(APIView):
                 # and you want to calculate RSI for a 14-day period
                 # Add RSI column to the DataFrame
                 rsi = calculate_rsi(stock_data, period=14)
+                rsi.dropna()
                 print(rsi)
                 short_rolling = stock_data.rolling(window=short_window).mean()
                 long_rolling = stock_data.rolling(window=long_window).mean()
