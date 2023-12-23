@@ -478,6 +478,7 @@ class MACross(APIView):
             # get_stock_symbol()
             try:
                 stock_data = get_stock_data(symbol, start_date, end_date)
+                stock_data.dropna()
                 stock_info = get_stock_info(symbol)
                 r_data = {}
                 if stock_info:
@@ -493,6 +494,7 @@ class MACross(APIView):
                 # and you want to calculate RSI for a 14-day period
                 # Add RSI column to the DataFrame
                 rsi = calculate_rsi(stock_data, period=14)
+                rsi=rsi.dropna()
                 print(rsi)
                 short_rolling = stock_data.rolling(window=short_window).mean()
                 long_rolling = stock_data.rolling(window=long_window).mean()
@@ -554,6 +556,7 @@ class MACrossMulti(APIView):
         while self._trade_data is None:
             time.sleep(1)
         response = {"code": 200, "status": "success", "data": self._trade_data}
+        print(response)
         return Response(response)
 
     def plot_moving_average_crossover(self, short_window, long_window, start_date, end_date, detail):
@@ -564,6 +567,7 @@ class MACrossMulti(APIView):
             for stock in stock_list:
                 try:
                     stock_data = get_stock_data(stock, start_date, end_date)
+                    stock_data.dropna()
                     stock_info = get_stock_info(stock)
                     r_data = {}
                     if stock_info:
@@ -571,9 +575,10 @@ class MACrossMulti(APIView):
                             r_keys = get_req_data_keys()
                             for key in r_keys:
                                 r_data.setdefault(key, stock_info.info.get(key))
-                    r_data.setdefault("currentPrice", stock_info.info.get("currentPrice"))
+                    r_data.setdefault("current_price", stock_info.info.get("currentPrice"))
                     self._trade_data.setdefault(stock, {}).update(r_data)
                     rsi = calculate_rsi(stock_data, period=14)
+                    rsi = rsi.dropna()
                     short_rolling = stock_data.rolling(window=short_window).mean()
                     long_rolling = stock_data.rolling(window=long_window).mean()
 
@@ -591,7 +596,7 @@ class MACrossMulti(APIView):
                         price_diff = ((buy_signal.values[-1] - stock_info.info.get("currentPrice")) / buy_signal.values[
                             -1]) * 100
                         self._trade_data.setdefault(stock, {}).update({
-                            "buy price diff": price_diff})
+                            "buy_price_diff": price_diff})
                     self._trade_data.setdefault(stock, {}).update({
                         "buy_signal": buy_data})
                     sell_data = {"date": sell_signal.index[-1], "price": sell_signal.values[-1]} if len(
@@ -646,6 +651,7 @@ class MACrossFilter(APIView):
                     long_rolling = stock_data.rolling(window=long_window).mean()
                     # Calculate RSI
                     rsi = calculate_rsi(stock_data, period=14)
+                    rsi = rsi.dropna()
                     # Plot Buy and Sell signals
                     buy_signal = short_rolling[short_rolling > long_rolling]
                     sell_signal = short_rolling[short_rolling <= long_rolling]
