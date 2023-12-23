@@ -575,7 +575,7 @@ class MACrossMulti(APIView):
                             r_keys = get_req_data_keys()
                             for key in r_keys:
                                 r_data.setdefault(key, stock_info.info.get(key))
-                    r_data.setdefault("currentPrice", stock_info.info.get("currentPrice"))
+                    r_data.setdefault("current_price", stock_info.info.get("currentPrice"))
                     self._trade_data.setdefault(stock, {}).update(r_data)
                     rsi = calculate_rsi(stock_data, period=14)
                     rsi = rsi.dropna()
@@ -596,7 +596,7 @@ class MACrossMulti(APIView):
                         price_diff = ((buy_signal.values[-1] - stock_info.info.get("currentPrice")) / buy_signal.values[
                             -1]) * 100
                         self._trade_data.setdefault(stock, {}).update({
-                            "buy price diff": price_diff})
+                            "buy_price_diff": price_diff})
                     self._trade_data.setdefault(stock, {}).update({
                         "buy_signal": buy_data})
                     sell_data = {"date": sell_signal.index[-1], "price": sell_signal.values[-1]} if len(
