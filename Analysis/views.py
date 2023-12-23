@@ -494,7 +494,7 @@ class MACross(APIView):
                 # and you want to calculate RSI for a 14-day period
                 # Add RSI column to the DataFrame
                 rsi = calculate_rsi(stock_data, period=14)
-                rsi.dropna()
+                rsi=rsi.dropna()
                 print(rsi)
                 short_rolling = stock_data.rolling(window=short_window).mean()
                 long_rolling = stock_data.rolling(window=long_window).mean()
@@ -556,6 +556,7 @@ class MACrossMulti(APIView):
         while self._trade_data is None:
             time.sleep(1)
         response = {"code": 200, "status": "success", "data": self._trade_data}
+        print(response)
         return Response(response)
 
     def plot_moving_average_crossover(self, short_window, long_window, start_date, end_date, detail):
@@ -577,7 +578,7 @@ class MACrossMulti(APIView):
                     r_data.setdefault("currentPrice", stock_info.info.get("currentPrice"))
                     self._trade_data.setdefault(stock, {}).update(r_data)
                     rsi = calculate_rsi(stock_data, period=14)
-                    rsi.dropna()
+                    rsi = rsi.dropna()
                     short_rolling = stock_data.rolling(window=short_window).mean()
                     long_rolling = stock_data.rolling(window=long_window).mean()
 
@@ -650,6 +651,7 @@ class MACrossFilter(APIView):
                     long_rolling = stock_data.rolling(window=long_window).mean()
                     # Calculate RSI
                     rsi = calculate_rsi(stock_data, period=14)
+                    rsi = rsi.dropna()
                     # Plot Buy and Sell signals
                     buy_signal = short_rolling[short_rolling > long_rolling]
                     sell_signal = short_rolling[short_rolling <= long_rolling]
