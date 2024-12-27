@@ -1,0 +1,1 @@
+http://127.0.0.1:8000/ma_cross?ShortWindow=50&LongWindow=200&StartDate=2022-12-27&Stock=ASHOKLEY.NS&Detail=True&Plot=true

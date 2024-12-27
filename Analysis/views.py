@@ -478,6 +478,7 @@ class MACross(APIView):
             # get_stock_symbol()
             try:
                 stock_data = get_stock_data(symbol, start_date, end_date)
+                print(stock_data)
                 stock_data.dropna()
                 stock_info = get_stock_info(symbol)
                 r_data = {}
@@ -498,6 +499,8 @@ class MACross(APIView):
                 print(rsi)
                 short_rolling = stock_data.rolling(window=short_window).mean()
                 long_rolling = stock_data.rolling(window=long_window).mean()
+                print(short_rolling,"qwert")
+                print(long_rolling,"wqert")
 
                 # Plotting
                 if plot:
@@ -511,6 +514,8 @@ class MACross(APIView):
                 # Plot Buy and Sell signals
                 buy_signal = short_rolling[short_rolling > long_rolling]
                 sell_signal = short_rolling[short_rolling <= long_rolling]
+                print(buy_signal,"buyyyyy")
+                print(sell_signal,"erty")
                 # Calculate RSI
                 rsi_data = {"date": rsi.index[-1], "price": rsi.values[-1]} if len(
                     rsi.index) > 0 else {}
@@ -567,6 +572,7 @@ class MACrossMulti(APIView):
             for stock in stock_list:
                 try:
                     stock_data = get_stock_data(stock, start_date, end_date)
+                    print(stock_data,"5700000000")
                     stock_data.dropna()
                     stock_info = get_stock_info(stock)
                     r_data = {}
