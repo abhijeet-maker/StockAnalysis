@@ -16,11 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
-from .views import MACross,MACrossMulti,MACrossFilter
+from .views import SingleStockMACross,MultiStockMACross,MACrossFilter
 
 urlpatterns = [
-    path('ma_cross/', MACross.as_view()),
-    path('ma_cross_multi/', MACrossMulti.as_view()),
+    path('single_stock_ma_cross/', SingleStockMACross.as_view()),
+    path('multi_stock_ma_cross/', MultiStockMACross.as_view()),
     path('ma_cross_filter/', MACrossFilter.as_view()),
 
 ]

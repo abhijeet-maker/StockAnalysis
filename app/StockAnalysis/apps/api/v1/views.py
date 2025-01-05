@@ -8,86 +8,12 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 import yahoo_fin.stock_info as si
 from .data.stocks_list import full_stock_list
+from .data.data_keys import r_keys
 import pandas as pd
 import numpy as np
 
 
-def get_stock_data(symbol, start_date, end_date):
-    try:
-        stock_data = yf.download(symbol, start=start_date, end=end_date)
-        print(stock_data,"stock_data")
-        return stock_data['Close']
-    except Exception as e:
-        print(e)
-        return e, None
-
-
-def get_stock_info(symbol):
-    try:
-        stock_info = yf.Ticker(symbol)
-        print(stock_info,"stock_info")
-        return stock_info
-    except Exception as e:
-        print(e)
-        return e
-
-
-def get_req_data_keys():
-    r_keys = ['sector', 'fullTimeEmployees', 'auditRisk', 'boardRisk', 'compensationRisk',
-              'shareHolderRightsRisk', 'overallRisk', 'priceHint', 'previousClose', 'open',
-              'dayLow',
-              'dayHigh', 'regularMarketPreviousClose', 'regularMarketOpen', 'regularMarketDayLow',
-              'regularMarketDayHigh', 'dividendRate', 'dividendYield', 'exDividendDate',
-              'payoutRatio',
-              'fiveYearAvgDividendYield', 'beta', 'trailingPE', 'forwardPE', 'volume',
-              'regularMarketVolume', 'averageVolume', 'averageVolume10days',
-              'averageDailyVolume10Day',
-              'marketCap', 'fiftyTwoWeekLow', 'fiftyTwoWeekHigh', 'priceToSalesTrailing12Months',
-              'fiftyDayAverage', 'twoHundredDayAverage', 'trailingAnnualDividendRate',
-              'trailingAnnualDividendYield', 'currency', 'enterpriseValue', 'profitMargins',
-              'floatShares', 'sharesOutstanding', 'heldPercentInsiders', 'heldPercentInstitutions',
-              'impliedSharesOutstanding', 'bookValue', 'priceToBook', 'earningsQuarterlyGrowth',
-              'netIncomeToCommon', 'trailingEps', 'forwardEps', 'lastSplitFactor', 'lastSplitDate',
-              'enterpriseToRevenue', 'enterpriseToEbitda', '52WeekChange', 'SandP52WeekChange',
-              'lastDividendValue', 'longName', 'firstTradeDateEpochUtc', 'gmtOffSetMilliseconds',
-              'targetHighPrice', 'targetLowPrice', 'targetMeanPrice',
-              'targetMedianPrice', 'recommendationMean', 'recommendationKey',
-              'numberOfAnalystOpinions',
-              'totalCash', 'totalCashPerShare', 'ebitda', 'totalDebt', 'quickRatio', 'currentRatio',
-              'totalRevenue', 'debtToEquity', 'revenuePerShare', 'returnOnAssets', 'returnOnEquity',
-              'grossProfits', 'earningsGrowth', 'revenueGrowth', 'grossMargins', 'ebitdaMargins',
-              'operatingMargins']
-    return r_keys
-
-
-
-def get_stock_list():
-    stock_list = si.tickers_nifty50()
-    return stock_list
-
-
-def calculate_rsi(data, period=14):
-    # Calculate price changes
-    delta = data.diff(1)
-
-    # Calculate gains (positive changes) and losses (negative changes)
-    gains = delta.where(delta > 0, 0)
-    losses = -delta.where(delta < 0, 0)
-
-    # Calculate average gains and losses over the specified period
-    avg_gain = gains.rolling(window=period, min_periods=1).mean()
-    avg_loss = losses.rolling(window=period, min_periods=1).mean()
-
-    # Calculate the relative strength (RS)
-    rs = avg_gain / avg_loss
-
-    # Calculate the relative strength index (RSI)
-    rsi = 100 - (100 / (1 + rs))
-
-    return rsi
-
-
-class MACross(APIView):
+class SingleStockMACross(APIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._trade_data = {}
@@ -102,7 +28,8 @@ class MACross(APIView):
             end_date = params.get("EndDate", datetime.date.today())
             plot = params.get("Plot", False)
             detail = params.get("Detail", False) if params.get("Detail", False) == "True" else False
-            self.plot_moving_average_crossover(symbol, short_window, long_window, start_date, end_date, plot, detail)
+            sample_count = int(params.get("sample_count",14))
+            self.plot_moving_average_crossover(symbol, short_window, long_window, start_date, end_date, plot, detail, no_of_sample=sample_count)
         except Exception as e:
             print(e, "error in main func.")
         while self._trade_data is None:
@@ -110,7 +37,7 @@ class MACross(APIView):
         response = {"code": 200, "status": "success", "data": self._trade_data}
         return Response(response)
 
-    def plot_moving_average_crossover(self, symbol, short_window, long_window, start_date, end_date, plot, detail):
+    def plot_moving_average_crossover(self, symbol, short_window, long_window, start_date, end_date, plot, detail, no_of_sample=14):
         # Get stock data
         try:
             # get_stock_symbol()
@@ -122,8 +49,8 @@ class MACross(APIView):
                 r_data = {}
                 if stock_info:
                     if detail:
-                        r_keys = get_req_data_keys()
-                        for key in r_keys:
+                        req_keys = r_keys
+                        for key in req_keys:
                             r_data.setdefault(key, stock_info.info.get(key))
                 r_data.setdefault("currentPrice", stock_info.info.get("currentPrice"))
                 self._trade_data.setdefault(symbol, {}).update(r_data)
@@ -132,9 +59,9 @@ class MACross(APIView):
                 # Assuming you have a DataFrame 'df' with a column 'Close' representing closing prices
                 # and you want to calculate RSI for a 14-day period
                 # Add RSI column to the DataFrame
-                rsi = calculate_rsi(stock_data, period=14)
+                rsi = calculate_rsi(stock_data, no_of_sample ,period=14)
                 rsi=rsi.dropna()
-                print(rsi)
+                print(rsi,"rsi")
                 short_rolling = stock_data.rolling(window=short_window).mean()
                 long_rolling = stock_data.rolling(window=long_window).mean()
                 print(short_rolling,"qwert")
@@ -156,7 +83,7 @@ class MACross(APIView):
                 print(buy_signal,"buyyyyy")
                 print(sell_signal,"erty")
                 # Calculate RSI
-                rsi_data = {"date": rsi.index[-1], "price": rsi.values[-1]} if len(
+                rsi_data = {"date": rsi.index[-1], "value": rsi.values[-1]} if len(
                     rsi.index) > 0 else {}
                 self._trade_data.setdefault(symbol, {}).update({
                     "rsi": rsi_data})
@@ -182,7 +109,7 @@ class MACross(APIView):
             self._trade_data = str(e)
 
 
-class MACrossMulti(APIView):
+class MultiStockMACross(APIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._trade_data = {}
@@ -218,8 +145,8 @@ class MACrossMulti(APIView):
                     r_data = {}
                     if stock_info:
                         if detail:
-                            r_keys = get_req_data_keys()
-                            for key in r_keys:
+                            req_keys = r_keys
+                            for key in req_keys:
                                 r_data.setdefault(key, stock_info.info.get(key))
                     r_data.setdefault("current_price", stock_info.info.get("currentPrice"))
                     self._trade_data.setdefault(stock, {}).update(r_data)
@@ -264,12 +191,13 @@ class MACrossFilter(APIView):
     def get(self, request):
         try:
             params = request.query_params
+            bucket = params.get("bucket")
             short_window = int(params.get("ShortWindow"))
             long_window = int(params.get("LongWindow"))
             start_date = params.get("StartDate")
             end_date = params.get("EndDate", datetime.date.today())
             detail = params.get("Detail", False) if params.get("Detail", False) == "True" else False
-            self.plot_moving_average_crossover(short_window, long_window, start_date, end_date, detail)
+            self.plot_moving_average_crossover(bucket,short_window, long_window, start_date, end_date, detail)
         except Exception as e:
             print(e, "error in main func.")
         while self._trade_data is None:
@@ -277,10 +205,10 @@ class MACrossFilter(APIView):
         response = {"code": 200, "status": "success", "data": self._trade_data}
         return Response(response)
 
-    def plot_moving_average_crossover(self, short_window, long_window, start_date, end_date, detail):
+    def plot_moving_average_crossover(self, bucket, short_window, long_window, start_date, end_date, detail):
         # Get stock data
         try:
-            stock_list = get_stock_list()
+            stock_list = get_stock_list(bucket)
             for stock in stock_list:
                 try:
                     stock_data = get_stock_data(stock, start_date, end_date)
@@ -288,8 +216,8 @@ class MACrossFilter(APIView):
                     r_data = {}
                     if stock_info:
                         if detail:
-                            r_keys = get_req_data_keys()
-                            for key in r_keys:
+                            req_keys = r_keys
+                            for key in req_keys:
                                 r_data.setdefault(key, stock_info.info.get(key))
                     r_data.setdefault("currentPrice", stock_info.info.get("currentPrice"))
                     self._trade_data.setdefault(stock, {}).update(r_data)
@@ -317,3 +245,56 @@ class MACrossFilter(APIView):
 
         except Exception as e:
             self._trade_data = str(e)
+
+
+
+def get_stock_data(symbol, start_date, end_date):
+    try:
+        stock_data = yf.download(symbol, start=start_date, end=end_date)
+        print(stock_data,"stock_data")
+        return stock_data['Close']
+    except Exception as e:
+        print(e)
+        return e, None
+
+
+def get_stock_info(symbol):
+    try:
+        stock_info = yf.Ticker(symbol)
+        print(stock_info,"stock_info")
+        return stock_info
+    except Exception as e:
+        print(e)
+        return e
+
+
+
+def get_stock_list(bucket):
+    stock_list={ "nifty50":si.tickers_nifty50() }
+    return stock_list[bucket]
+
+
+def calculate_rsi(data, no_of_sample, period=14):
+    
+    #get last 14 rows from dataframe
+    data=data.tail(no_of_sample)
+    
+    print(data,"rsi_data")
+    # Calculate price changes
+    delta = data.diff(1)
+    
+    # Calculate gains (positive changes) and losses (negative changes)
+    gains = delta.where(delta > 0, 0)
+    losses = -delta.where(delta < 0, 0)
+
+    # Calculate average gains and losses over the specified period
+    avg_gain = gains.rolling(window=period, min_periods=1).mean()
+    avg_loss = losses.rolling(window=period, min_periods=1).mean()
+
+    # Calculate the relative strength (RS)
+    rs = avg_gain / avg_loss
+
+    # Calculate the relative strength index (RSI)
+    rsi = 100 - (100 / (1 + rs))
+
+    return rsi
